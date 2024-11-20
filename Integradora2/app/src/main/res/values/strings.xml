@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Integradora2</string>
+    <string name="navigation_drawer_open">Abrir menú de navegación</string>
+    <string name="navigation_drawer_close">Cerrar menú de navegación</string>
+    <string name="menu_logout">Cerrar Sesión</string>
+
+</resources>
