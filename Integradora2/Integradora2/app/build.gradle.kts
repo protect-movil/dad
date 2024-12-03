@@ -53,8 +53,13 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
 
+    // Servicios de autenticación de Google Play
+    implementation("com.google.android.gms:play-services-auth:20.7.0") // Última versión
+
     // Dependencias para testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+

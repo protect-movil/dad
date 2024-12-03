@@ -41,6 +41,7 @@ class AddChildActivity : AppCompatActivity() {
     private fun addChildToParent(childCode: String) {
         val userId = auth.currentUser?.uid ?: return
 
+        // Corregir la ruta: ahora la colección de hijos está dentro de "children"
         db.collection("children")
             .whereEqualTo("code", childCode)
             .get()
@@ -57,19 +58,24 @@ class AddChildActivity : AppCompatActivity() {
                     )
                     db.collection("invitations").add(newInvitation)
                         .addOnSuccessListener { documentReference ->
-                            Toast.makeText(this, "Invitación enviada con éxito", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Invitación enviada con éxito", Toast.LENGTH_SHORT)
+                                .show()
                             finish() // Cierra la actividad
                         }
                         .addOnFailureListener { e ->
-                            Toast.makeText(this, "Error al enviar la invitación: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                "Error al enviar la invitación: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                 } else {
                     Toast.makeText(this, "Código de hijo no encontrado", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Error al buscar el código: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error al buscar el código: ${e.message}", Toast.LENGTH_SHORT)
+                    .show()
             }
     }
-
 }

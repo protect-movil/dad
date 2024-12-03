@@ -26,7 +26,7 @@ class ChildAdapter(
 
     override fun onBindViewHolder(holder: ChildViewHolder, position: Int) {
         val child = childrenList[position]
-        holder.bind(child, position)
+        holder.bind(child)
     }
 
     override fun getItemCount(): Int = childrenList.size
@@ -36,41 +36,38 @@ class ChildAdapter(
         private val btnViewLocation: Button = itemView.findViewById(R.id.btnViewLocation)
         private val btnEditChildName: Button = itemView.findViewById(R.id.btnEditChildName)
 
-        fun bind(child: Child, position: Int) {
+        fun bind(child: Child) {
             tvChildName.text = child.name
 
-            // Acción para ver la ubicación
             btnViewLocation.setOnClickListener {
-                Toast.makeText(context, "Funcionalidad no implementada aún", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Funcionalidad no implementada aún", Toast.LENGTH_SHORT)
+                    .show()
             }
 
-            // Acción para editar el nombre
             btnEditChildName.setOnClickListener {
-                showEditNameDialog(child, position)
+                showEditNameDialog(child)
             }
         }
 
-        private fun showEditNameDialog(child: Child, position: Int) {
+        private fun showEditNameDialog(child: Child) {
             val builder = AlertDialog.Builder(context)
             builder.setTitle("Editar Nombre")
 
-            // Crear un EditText para ingresar el nuevo nombre
             val input = EditText(context)
             input.hint = "Nuevo nombre"
             builder.setView(input)
 
-            // Configurar el botón de confirmación
             builder.setPositiveButton("Guardar") { dialog, _ ->
                 val newName = input.text.toString().trim()
                 if (newName.isNotEmpty()) {
-                    updateChildNameInFirestore(child, newName, position)
+                    updateChildNameInFirestore(child, newName)
                 } else {
-                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT)
+                        .show()
                 }
                 dialog.dismiss()
             }
 
-            // Botón de cancelar
             builder.setNegativeButton("Cancelar") { dialog, _ ->
                 dialog.cancel()
             }
@@ -78,24 +75,26 @@ class ChildAdapter(
             builder.show()
         }
 
-        private fun updateChildNameInFirestore(child: Child, newName: String, position: Int) {
+        private fun updateChildNameInFirestore(child: Child, newName: String) {
             val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
             val db = FirebaseFirestore.getInstance()
 
-            // Actualizar el nombre en Firestore
+            // Corregir la ruta: usar la colección "hijos" del usuario actual
             db.collection("usuarios").document(userId).collection("hijos")
-                .document(child.id)
+                .document(child.id) // Usar el ID del hijo específico
                 .update("name", newName)
                 .addOnSuccessListener {
-                    // Actualizar el nombre en la lista local y notificar el cambio
                     child.name = newName
                     notifyItemChanged(adapterPosition)
-                    Toast.makeText(context, "Nombre actualizado exitosamente", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Nombre actualizado exitosamente", Toast.LENGTH_SHORT)
+                        .show()
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(context, "Error al actualizar el nombre", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error al actualizar el nombre", Toast.LENGTH_SHORT)
+                        .show()
                     Log.e("FirestoreUpdate", "Error: ${e.message}")
                 }
         }
+
     }
 }
