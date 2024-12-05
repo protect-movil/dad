@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 
 class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -41,6 +42,17 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         progressBar = findViewById(R.id.progressBar)
+
+        // Encuentra el TextView en el diseño
+        val tvParentId = findViewById<TextView>(R.id.tvParentId)
+
+        // Obtén el UID del usuario actual y actualiza el TextView
+        val parentId = auth.currentUser?.uid
+        if (parentId != null) {
+            tvParentId.text = "UID: $parentId"
+        } else {
+            tvParentId.text = "No hay usuario autenticado"
+        }
 
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -76,7 +88,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         // Escuchar invitaciones aceptadas
         listenForChildrenUpdates()
         setupRefreshButton()
-        fetchChildDetails()
+        //fetchChildDetails()
     }
 
     private fun showInvitationDialog() {
@@ -130,36 +142,6 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         }
     }
 
-    private fun refreshChildrenList() {
-        progressBar.visibility = View.VISIBLE // Muestra la barra de progreso
-        val userId = auth.currentUser?.uid ?: return
-
-        // Corrección en la ruta de Firestore: usamos "usuarios" para acceder al documento del usuario
-        db.collection("usuarios").document(userId).collection("hijos")
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                childrenList.clear() // Limpia la lista para evitar duplicados
-                for (document in querySnapshot.documents) {
-                    val child = document.toObject(Child::class.java)
-                    if (child != null) {
-                        child.id = document.id // Asigna el ID al objeto Child
-                        childrenList.add(child)
-                    }
-                }
-                childAdapter.notifyDataSetChanged() // Notifica al adaptador
-                updateEmptyMessageVisibility() // Maneja el mensaje de lista vacía
-                progressBar.visibility = View.GONE // Oculta la barra de progreso
-                Toast.makeText(this, "Lista actualizada", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { e ->
-                progressBar.visibility = View.GONE // Oculta la barra de progreso
-                Log.e("Firestore", "Error al recargar la lista de hijos: ${e.message}")
-                Toast.makeText(this, "Error al actualizar la lista", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-
-
     private fun listenForChildrenUpdates() {
         db.collection("usuarios").document("hijos")
             .collection("hijos")
@@ -185,28 +167,76 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             }
     }
 
-    private fun fetchChildDetails() {
-        db.collection("usuarios").document("hijos")
-            .collection("hijos")
+    private fun refreshChildrenList() {
+        val parentId = auth.currentUser?.uid ?: return
+        progressBar.visibility = View.VISIBLE
+
+        Log.d("Firestore", "Iniciando consulta de hijos para el parentId: $parentId")
+
+        // Consulta las invitaciones aceptadas
+        db.collection("invitations")
+            .whereEqualTo("parentId", parentId)
+            .whereEqualTo("status", "accepted")
             .get()
             .addOnSuccessListener { querySnapshot ->
-                childrenList.clear() // Limpia la lista para evitar duplicados
-                for (document in querySnapshot.documents) {
-                    val child = document.toObject(Child::class.java)
-                    if (child != null) {
-                        child.id = document.id // Asigna el ID al objeto Child
-                        childrenList.add(child)
-                    }
+                val childIds = querySnapshot.documents.mapNotNull { it.getString("childId") }
+                Log.d("Firestore", "Número de invitaciones aceptadas: ${querySnapshot.size()}")
+                Log.d("Firestore", "childIds obtenidos: $childIds")
+
+                if (childIds.isEmpty()) {
+                    Log.d("Firestore", "No se encontraron hijos aceptados para este padre.")
+                    childrenList.clear()
+                    childAdapter.notifyDataSetChanged()
+                    updateEmptyMessageVisibility()
+                    progressBar.visibility = View.GONE
+                    return@addOnSuccessListener
                 }
-                childAdapter.notifyDataSetChanged() // Notifica al adaptador
-                updateEmptyMessageVisibility() // Maneja el mensaje de lista vacía
-                Toast.makeText(this, "Lista actualizada", Toast.LENGTH_SHORT).show()
+
+                // Limpia la lista actual antes de agregar nuevos datos
+                childrenList.clear()
+
+                // Itera sobre los childIds y consulta en "usuarios/hijos/{childId}/details"
+                childIds.forEach { childId ->
+                    db.collection("usuarios")
+                        .document("hijos")
+                        .collection(childId)
+                        .document("details") // Accede al subdocumento "details"
+                        .get()
+                        .addOnSuccessListener { detailsSnapshot ->
+                            if (detailsSnapshot.exists()) {
+                                val name = detailsSnapshot.getString("name")
+                                if (name != null) {
+                                    val child = Child(
+                                        id = childId,
+                                        name = name
+                                    )
+                                    childrenList.add(child)
+                                    Log.d("Firestore", "Hijo agregado: ${child.name}, ID: ${child.id}")
+                                }
+                            } else {
+                                Log.d("Firestore", "No se encontró el subdocumento 'details' para el hijo con ID: $childId")
+                            }
+
+                            // Notifica al adaptador cuando se haya procesado el último hijo
+                            if (childIds.last() == childId) {
+                                Log.d("Adapter", "Tamaño final de la lista de hijos: ${childrenList.size}")
+                                childAdapter.notifyDataSetChanged()
+                                updateEmptyMessageVisibility()
+                                progressBar.visibility = View.GONE
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Error al obtener detalles del hijo: ${e.message}")
+                        }
+                }
             }
             .addOnFailureListener { e ->
-                Log.e("Firestore", "Error al cargar detalles de hijos: ${e.message}")
-                Toast.makeText(this, "Error al cargar datos de hijos", Toast.LENGTH_SHORT).show()
+                Log.e("Firestore", "Error al cargar invitaciones: ${e.message}")
+                progressBar.visibility = View.GONE
             }
     }
+
+
 
 
     private fun updateEmptyMessageVisibility() {

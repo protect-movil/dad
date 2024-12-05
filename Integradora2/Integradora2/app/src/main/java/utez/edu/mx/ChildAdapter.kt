@@ -26,6 +26,7 @@ class ChildAdapter(
 
     override fun onBindViewHolder(holder: ChildViewHolder, position: Int) {
         val child = childrenList[position]
+        Log.d("Adapter", "Vinculando hijo: ${child.name}, ID: ${child.id}")
         holder.bind(child)
     }
 
@@ -37,6 +38,7 @@ class ChildAdapter(
         private val btnEditChildName: Button = itemView.findViewById(R.id.btnEditChildName)
 
         fun bind(child: Child) {
+            Log.d("Adapter", "Configurando vista para: ${child.name}")
             tvChildName.text = child.name
 
             btnViewLocation.setOnClickListener {
@@ -76,25 +78,25 @@ class ChildAdapter(
         }
 
         private fun updateChildNameInFirestore(child: Child, newName: String) {
-            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
             val db = FirebaseFirestore.getInstance()
 
-            // Corregir la ruta: usar la colección "hijos" del usuario actual
-            db.collection("usuarios").document(userId).collection("hijos")
-                .document(child.id) // Usar el ID del hijo específico
-                .update("name", newName)
+            // Ruta corregida para actualizar el nombre
+            db.collection("usuarios")
+                .document("hijos")
+                .collection(child.id) // Colección del hijo con su ID
+                .document("details") // Documento "details" donde se encuentra el nombre
+                .update("name", newName) // Actualiza el campo "name"
                 .addOnSuccessListener {
                     child.name = newName
-                    notifyItemChanged(adapterPosition)
-                    Toast.makeText(context, "Nombre actualizado exitosamente", Toast.LENGTH_SHORT)
-                        .show()
+                    notifyItemChanged(adapterPosition) // Notifica al adaptador para actualizar la vista
+                    Toast.makeText(context, "Nombre actualizado exitosamente", Toast.LENGTH_SHORT).show()
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(context, "Error al actualizar el nombre", Toast.LENGTH_SHORT)
-                        .show()
-                    Log.e("FirestoreUpdate", "Error: ${e.message}")
+                    Toast.makeText(context, "Error al actualizar el nombre", Toast.LENGTH_SHORT).show()
+                    Log.e("FirestoreUpdate", "Error al actualizar nombre: ${e.message}")
                 }
         }
+
 
     }
 }
