@@ -3,5 +3,6 @@
     <string name="navigation_drawer_open">Abrir menú de navegación</string>
     <string name="navigation_drawer_close">Cerrar menú de navegación</string>
     <string name="menu_logout">Cerrar Sesión</string>
+    <string name="title_activity_maps">MapsActivity</string>
 
 </resources>

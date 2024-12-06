@@ -1,6 +1,7 @@
 package utez.edu.mx
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -42,8 +43,9 @@ class ChildAdapter(
             tvChildName.text = child.name
 
             btnViewLocation.setOnClickListener {
-                Toast.makeText(context, "Funcionalidad no implementada aún", Toast.LENGTH_SHORT)
-                    .show()
+                val intent = Intent(context, MapsActivity::class.java)
+                intent.putExtra("childId", child.id) // Enviamos el ID del niño para buscar la ubicación
+                context.startActivity(intent)
             }
 
             btnEditChildName.setOnClickListener {
