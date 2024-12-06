@@ -53,7 +53,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         } else {
             tvParentId.text = "No hay usuario autenticado"
         }
-
+    /*
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
@@ -62,7 +62,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         )
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
-
+    */
         navView.setNavigationItemSelectedListener(this)
 
         recyclerView = findViewById(R.id.rvChildrenList)
@@ -235,9 +235,6 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 progressBar.visibility = View.GONE
             }
     }
-
-
-
 
     private fun updateEmptyMessageVisibility() {
         tvEmptyMessage.visibility = if (childrenList.isEmpty()) View.VISIBLE else View.GONE
