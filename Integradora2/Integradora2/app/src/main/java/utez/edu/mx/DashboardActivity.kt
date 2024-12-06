@@ -43,16 +43,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         navView = findViewById(R.id.nav_view)
         progressBar = findViewById(R.id.progressBar)
 
-        // Encuentra el TextView en el diseño
-        val tvParentId = findViewById<TextView>(R.id.tvParentId)
 
-        // Obtén el UID del usuario actual y actualiza el TextView
-        val parentId = auth.currentUser?.uid
-        if (parentId != null) {
-            tvParentId.text = "UID: $parentId"
-        } else {
-            tvParentId.text = "No hay usuario autenticado"
-        }
     /*
         val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
